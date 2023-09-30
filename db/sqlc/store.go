@@ -61,8 +61,8 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 
 	err := store.execTx(ctx, func(q *Queries) error {
 		var err error
-		txName := ctx.Value(txKey)
-		fmt.Println(txName, "create transfer")
+
+		fmt.Println("create transfer")
 		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
 			FromAccountID: arg.FromAccountID,
 			ToAccountID:   arg.ToAccountID,
@@ -72,7 +72,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		fmt.Println(txName, "create entry 1")
+		fmt.Println("create entry 1")
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.FromAccountID,
 			Amount:    -arg.Amount,
@@ -81,7 +81,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		fmt.Println(txName, "create entry 2")
+		fmt.Println("create entry 2")
 		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.ToAccountID,
 			Amount:    arg.Amount,
@@ -90,22 +90,40 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		// update account balance
-		result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-			Amount: -arg.Amount,
-			ID:     arg.FromAccountID,
-		})
-		if err != nil {
-			return err
-		}
+		if arg.FromAccountID < arg.ToAccountID {
+			// update account balance
+			result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+				Amount: -arg.Amount,
+				ID:     arg.FromAccountID,
+			})
+			if err != nil {
+				return err
+			}
 
+			result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+				Amount: arg.Amount,
+				ID:     arg.ToAccountID,
+			})
+			if err != nil {
+				return err
+			}
+		} else {
+			result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+				Amount: arg.Amount,
+				ID:     arg.ToAccountID,
+			})
+			if err != nil {
+				return err
+			}
 
-		result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-			Amount: arg.Amount,
-			ID:     arg.ToAccountID,
-		})
-		if err != nil {
-			return err
+			result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+				Amount: -arg.Amount,
+				ID:     arg.FromAccountID,
+			})
+			if err != nil {
+				return err
+			}
+
 		}
 
 		return nil
