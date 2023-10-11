@@ -8,7 +8,7 @@ import (
 	db "github.com/abhisheksatish1999/simplebank/db/sqlc"
 	"github.com/abhisheksatish1999/simplebank/util"
 	_ "github.com/lib/pq"
-)
+	)
 
 func main() {
 
