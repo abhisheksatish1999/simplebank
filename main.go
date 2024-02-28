@@ -8,7 +8,7 @@ import (
 	db "github.com/abhisheksatish1999/simplebank/db/sqlc"
 	"github.com/abhisheksatish1999/simplebank/util"
 	_ "github.com/lib/pq"
-	)
+)
 
 func main() {
 
@@ -23,7 +23,11 @@ func main() {
 	}
 
 	store := db.NewStore(conn)
-	server := api.NewServer(store)
+	server, err := api.NewServer(store, config)
+	if err != nil {
+		log.Fatal("cannot create server: ", err)
+	}
+
 	err = server.Start(config.ServerAddress)
 	if err != nil {
 		log.Fatal("failed to start server: ", err)
